@@ -14,7 +14,7 @@ export async function configureN8n(owner:string,enabled:boolean,allowModel:boole
  await db().prepare('UPDATE nexora_n8n SET enabled=?,allow_model=?,allow_posting=?,allow_network=?,updated_at=? WHERE owner=?').bind(enabled?1:0,allowModel?1:0,posting?1:0,network?1:0,now(),owner).run();return n8nStatus(owner);}
 export async function revokeN8n(owner:string){await db().prepare('DELETE FROM nexora_n8n WHERE owner=?').bind(owner).run();return n8nStatus(owner);}
 export async function n8nOwner(req:Request){const raw=req.headers.get('authorization')?.match(/^Bearer (nxn_[a-f0-9]{64})$/)?.[1];if(!raw)throw Error('N8N_AUTH');const r:any=await db().prepare('SELECT owner,enabled,allow_model,allow_posting,allow_network,expires_at FROM nexora_n8n WHERE token_hash=?').bind(await hash(raw)).first();if(!r||r.expires_at<=now())throw Error('N8N_AUTH');await db().prepare('UPDATE nexora_n8n SET last_seen_at=? WHERE owner=?').bind(now(),r.owner).run();return r;}
-export async function n8nWorker(auth:any,b:any){const owner=auth.owner,config=await controls(owner);if(!auth.enabled||!config.enabled)return {paused:true,job:null,reason:'Runner or agent is paused.'};if(b.action==='status')return {enabled:true,...await n8nStatus(owner)};
+export async function n8nWorker(auth:any,b:any){const owner=auth.owner,config=await controls(owner);if(!auth.enabled||!config.enabled)return {paused:true,job:null,reason:'Runner or agent is paused.'};if(b.action==='status')return await n8nStatus(owner);
 if(b.action==='tick'){// Sharing task context with the external model is a separate owner opt-in.
  if(!auth.allow_model)return {job:null,reason:'Enable model processing in the n8n panel before claiming work.'};
  await prepare(owner);const work=await claim(owner);if(!work.job)return work;

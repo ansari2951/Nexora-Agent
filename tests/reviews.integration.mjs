@@ -11,7 +11,7 @@ try{
  const db=await mf.getD1Database('DB');for(const f of readdirSync('drizzle').filter(x=>x.endsWith('.sql')).sort())for(const s of readFileSync('drizzle/'+f,'utf8').split('--> statement-breakpoint'))if(s.trim())await db.prepare(s.trim()).run();
  async function call(path,method='GET',body,owner='a',origin='https://nexora.test'){const headers={'content-type':'application/json',origin};if(owner){headers['oai-authenticated-user-id']=owner;headers['oai-authenticated-user-email']=owner+'@example.test';}const r=await mf.dispatchFetch('https://nexora.test'+path,{method,headers,redirect:'manual',...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,location:r.headers.get('location'),data:r.headers.get('content-type')?.includes('application/json')?await r.json():await r.text()};}
  const rec=async(kind,payload,id=crypto.randomUUID(),owner='a')=>{const r=await call('/api/records','POST',{id,kind,payload},owner);assert.equal(r.status,200,JSON.stringify(r));return id;};
- assert.match((await call('/signup','GET',null,null)).data,/Sign up with ChatGPT/);assert.match((await call('/login','GET',null,null)).data,/Continue with ChatGPT/);
+ assert.match((await call('/signup','GET',null,null)).data,/Continue with ChatGPT/);assert.match((await call('/login','GET',null,null)).data,/Continue with ChatGPT/);
  assert.equal((await call('/api/account','POST',{name:'QA Name'},null)).status,401);
  assert.equal((await call('/api/account','POST',{name:'QA Name'},'a','https://evil.test')).status,403);
  assert.equal((await call('/api/account','POST',{name:'QA Name',owner:'b'})).status,200);
