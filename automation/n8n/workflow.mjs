@@ -19,7 +19,8 @@ try {
  if (raw.error) throw new Error('AI provider request failed; check credentials, model and quota in n8n.');
  const text = raw.output_text || (raw.steps || []).filter(s=>s.type==='model_output').flatMap(s=>s.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\\n') || (raw.outputs || []).filter(c=>c.type==='text').map(c=>c.text).join('\\n');
  if (!text) throw new Error('AI returned no final text. Review provider response; no retry performed.');
- base.result = JSON.parse(text.trim().replace(/^\x60\x60\x60(?:json)?\\s*/i,'').replace(/\\s*\x60\x60\x60$/,''));
+ const fence = String.fromCharCode(96).repeat(3);
+ base.result = JSON.parse(text.trim().replace(new RegExp('^'+fence+'(?:json)?\\\\s*','i'),'').replace(new RegExp('\\\\s*'+fence+'$'),''));
  if (!base.result || typeof base.result!=='object' || Array.isArray(base.result)) throw new Error('AI did not return a JSON object.');
  if (['research','profile_research','discover'].includes(work.job.type) && (base.result.identityMatched || work.job.type==='discover')) {
   const citations=(raw.steps||[]).filter(s=>s.type==='model_output').flatMap(s=>s.content||[]).flatMap(c=>c.annotations||[]).filter(a=>a.type==='url_citation').map(a=>a.url);

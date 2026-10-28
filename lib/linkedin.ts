@@ -1,4 +1,4 @@
-import {env} from 'cloudflare:workers';
+import {env} from '@/lib/runtime';
 import {getDb} from '@/db';
 import {networkAccounts,agentAlerts,linkedinAccounts as accounts,linkedinStates as states,linkedinPosts as posts} from '@/db/schema';
 import {and,eq,lt,lte,desc} from 'drizzle-orm';

@@ -1,4 +1,4 @@
-import {env} from 'cloudflare:workers';
+import {env} from '@/lib/runtime';
 import {authorize,reply,fail} from '@/lib/server';
 import {n8nStatus} from '@/lib/n8n';
 import {linkedinStatus} from '@/lib/linkedin';

@@ -1,4 +1,4 @@
-import {env} from 'cloudflare:workers';
+import {env} from '@/lib/runtime';
 import {controls,prepare,claim,finish} from './autonomy';
 import {linkedinStatus,runDuePosts} from './linkedin';
 import {networkStatus,syncNetwork,runNetwork} from './network';

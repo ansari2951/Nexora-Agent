@@ -1,4 +1,4 @@
-import {env} from 'cloudflare:workers';
+import {env} from '@/lib/runtime';
 import {z} from 'zod';
 import {reply} from '@/lib/server';
 export const dynamic='force-dynamic';

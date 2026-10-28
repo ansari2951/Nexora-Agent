@@ -1,0 +1,65 @@
+[
+  {
+    "name": "0000_new_whizzer.sql",
+    "statements": [
+      "CREATE TABLE `nexora_ai_runs` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`created_at` text NOT NULL\n)",
+      "CREATE TABLE `nexora_records` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`payload` text NOT NULL,\n\t`dedupe` text,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL\n)",
+      "CREATE UNIQUE INDEX `nexora_owner_dedupe` ON `nexora_records` (`owner`,`dedupe`)"
+    ]
+  },
+  {
+    "name": "0001_cultured_thunderbolt.sql",
+    "statements": [
+      "CREATE TABLE `nexora_agent_alerts` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`title` text NOT NULL,\n\t`body` text NOT NULL,\n\t`target_id` text,\n\t`seen` integer DEFAULT 0 NOT NULL,\n\t`created_at` text NOT NULL\n)",
+      "CREATE TABLE `nexora_agent_controls` (\n\t`owner` text PRIMARY KEY NOT NULL,\n\t`config` text NOT NULL,\n\t`updated_at` text NOT NULL\n)",
+      "CREATE TABLE `nexora_agent_jobs` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`type` text NOT NULL,\n\t`target_id` text,\n\t`state` text NOT NULL,\n\t`input` text NOT NULL,\n\t`output` text,\n\t`reason` text,\n\t`dedupe` text NOT NULL,\n\t`lease` text,\n\t`lease_until` text,\n\t`attempts` integer DEFAULT 0 NOT NULL,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL\n)",
+      "CREATE UNIQUE INDEX `nexora_job_dedupe` ON `nexora_agent_jobs` (`owner`,`dedupe`)"
+    ]
+  },
+  {
+    "name": "0002_bright_madame_masque.sql",
+    "statements": [
+      "CREATE TABLE `nexora_linkedin_accounts` (\n\t`owner` text PRIMARY KEY NOT NULL,\n\t`subject` text NOT NULL,\n\t`name` text NOT NULL,\n\t`encrypted_token` text NOT NULL,\n\t`scopes` text NOT NULL,\n\t`expires_at` text NOT NULL,\n\t`connected_at` text NOT NULL\n)",
+      "CREATE TABLE `nexora_linkedin_posts` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`body` text NOT NULL,\n\t`state` text NOT NULL,\n\t`scheduled_at` text NOT NULL,\n\t`subject` text NOT NULL,\n\t`remote_id` text,\n\t`reason` text,\n\t`started_at` text,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL\n)",
+      "CREATE TABLE `nexora_linkedin_states` (\n\t`hash` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`expires_at` text NOT NULL,\n\t`redirect_uri` text NOT NULL,\n\t`scopes` text NOT NULL\n)"
+    ]
+  },
+  {
+    "name": "0003_freezing_bullseye.sql",
+    "statements": [
+      "CREATE TABLE `nexora_intake_links` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`lead_id` text NOT NULL,\n\t`token_hash` text NOT NULL,\n\t`state` text NOT NULL,\n\t`expires_at` text NOT NULL,\n\t`submission_id` text,\n\t`submission_hash` text,\n\t`submission` text,\n\t`created_at` text NOT NULL,\n\t`submitted_at` text\n)",
+      "CREATE UNIQUE INDEX `nexora_intake_token` ON `nexora_intake_links` (`token_hash`)"
+    ]
+  },
+  {
+    "name": "0004_sloppy_human_fly.sql",
+    "statements": [
+      "CREATE TABLE `nexora_reviews` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`target_id` text NOT NULL,\n\t`section` text,\n\t`fingerprint` text NOT NULL,\n\t`payload` text NOT NULL,\n\t`state` text NOT NULL,\n\t`scheduled_at` text,\n\t`post_id` text,\n\t`subject` text,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL\n)",
+      "CREATE UNIQUE INDEX `nexora_review_snapshot` ON `nexora_reviews` (`owner`,`fingerprint`)"
+    ]
+  },
+  {
+    "name": "0005_perfect_machine_man.sql",
+    "statements": [
+      "CREATE TABLE `nexora_network_accounts` (\n\t`owner` text PRIMARY KEY NOT NULL,\n\t`api_base` text NOT NULL,\n\t`encrypted_key` text NOT NULL,\n\t`account_id` text,\n\t`identifier` text,\n\t`name` text,\n\t`state` text NOT NULL,\n\t`execution_lease` text,\n\t`execution_until` text,\n\t`config` text NOT NULL,\n\t`sync_cursor` text,\n\t`last_sync_at` text,\n\t`updated_at` text NOT NULL\n)",
+      "CREATE UNIQUE INDEX `nexora_network_account_unique` ON `nexora_network_accounts` (`account_id`)",
+      "CREATE TABLE `nexora_network_actions` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`account_id` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`target_id` text NOT NULL,\n\t`fingerprint` text NOT NULL,\n\t`payload` text NOT NULL,\n\t`state` text NOT NULL,\n\t`receipt` text,\n\t`reason` text,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL\n)",
+      "CREATE UNIQUE INDEX `nexora_network_action_dedupe` ON `nexora_network_actions` (`owner`,`fingerprint`)",
+      "CREATE TABLE `nexora_network_auth` (\n\t`token_hash` text PRIMARY KEY NOT NULL,\n\t`owner` text NOT NULL,\n\t`expires_at` text NOT NULL,\n\t`state` text NOT NULL\n)"
+    ]
+  },
+  {
+    "name": "0006_n8n_runner.sql",
+    "statements": [
+      "CREATE TABLE `nexora_n8n` (\n `owner` text PRIMARY KEY NOT NULL,\n `token_hash` text NOT NULL,\n `enabled` integer NOT NULL DEFAULT 0,\n `allow_model` integer NOT NULL DEFAULT 0,\n `expires_at` text NOT NULL,\n `last_seen_at` text,\n `updated_at` text NOT NULL\n)",
+      "CREATE UNIQUE INDEX `nexora_n8n_token` ON `nexora_n8n` (`token_hash`)"
+    ]
+  },
+  {
+    "name": "0007_n8n_account_scopes.sql",
+    "statements": [
+      "ALTER TABLE `nexora_n8n` ADD `allow_posting` integer NOT NULL DEFAULT 0",
+      "ALTER TABLE `nexora_n8n` ADD `allow_network` integer NOT NULL DEFAULT 0"
+    ]
+  }
+]
