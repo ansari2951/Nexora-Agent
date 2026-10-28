@@ -1,0 +1,57 @@
+import {createRequire} from 'node:module';
+import {readFileSync,readdirSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {randomBytes,randomUUID} from 'node:crypto';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+const {Miniflare}=await import(createRequire(require.resolve('wrangler')).resolve('miniflare'));
+const root=resolve('dist/server'),paths=readdirSync(root,{recursive:true}).filter(x=>/\.m?js$/.test(x));paths.sort((a,b)=>a==='index.js'?-1:b==='index.js'?1:a.localeCompare(b));
+const mf=new Miniflare({modules:paths.map(p=>({type:'ESModule',path:resolve(root,p),contents:readFileSync(resolve(root,p),'utf8')})),modulesRoot:root,compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:{DB:'nexora-intake-test'},cf:false});
+try{
+ const db=await mf.getD1Database('DB');
+ for(const file of readdirSync('drizzle').filter(x=>x.endsWith('.sql')).sort())for(const stmt of readFileSync('drizzle/'+file,'utf8').split('--> statement-breakpoint'))if(stmt.trim())await db.prepare(stmt.trim()).run();
+ const request=async(path,{owner=null,token=null,body,origin='https://nexora.test',method=body?'POST':'GET'}={})=>{
+  const headers={origin,'Content-Type':'application/json'};
+  if(owner){headers['oai-authenticated-user-id']=owner;headers['oai-authenticated-user-email']=owner+'@example.test';}
+  if(token)headers.Authorization='Bearer '+token;
+  const r=await mf.dispatchFetch('https://nexora.test'+path,{method,headers,...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};
+ };
+ const leadId=randomUUID(),lead={name:'Disposable client',company:'Disposable business',stage:'New',service:'Guest Posting',messages:[],requirements:{niche:'Owner-reviewed niche'}};
+ assert.equal((await request('/api/records',{owner:'a',body:{id:leadId,kind:'lead',payload:lead}})).status,200);
+ assert.equal((await request('/api/records',{owner:'a',body:{id:randomUUID(),kind:'publisher',payload:{domain:'private-cost.test',price:120,cost:70}}})).status,200);
+ const link={id:randomUUID(),leadId,token:randomBytes(32).toString('hex')};
+ const create=(owner='a',l=link)=>request('/api/intake',{owner,body:{action:'create',link:l}});
+ assert.equal((await create(null)).status,401);
+ assert.equal((await create('b')).status,400);
+ const created=await create();assert.equal(created.status,200,JSON.stringify(created));assert.equal(new URL(created.data.url).hash,'#'+link.token);
+ assert.equal((await create()).data.url,created.data.url,'Retried link creation preserves the exact link');
+ let stored=await db.prepare('SELECT * FROM nexora_intake_links WHERE id=?').bind(link.id).first();assert.notEqual(stored.token_hash,link.token);assert.equal(JSON.stringify(stored).includes(link.token),false);
+ const ownerList=await request('/api/intake?leadId='+leadId,{owner:'a'});assert.equal(ownerList.data.links.length,1);assert.equal(JSON.stringify(ownerList).includes(stored.token_hash),false);
+ assert.equal((await request('/api/intake?leadId='+leadId,{owner:'b'})).data.links.length,0);
+ assert.equal((await request('/api/inquiry')).status,404);
+ const publicStatus=await request('/api/inquiry',{token:link.token});assert.equal(publicStatus.status,200);assert.deepEqual(Object.keys(publicStatus.data).sort(),['expiresAt','state']);assert.equal(JSON.stringify(publicStatus).includes('Owner-reviewed'),false);
+ await request('/api/intake',{owner:'b',body:{action:'revoke',id:link.id}});assert.equal((await request('/api/inquiry',{token:link.token})).status,200,'Other account cannot revoke');
+ const brief={submissionId:randomUUID(),consent:true,name:'Actual submitted name',company:'Submitted company',website:'https://client.example/',service:'Article Writing',niche:'Submitted niche',country:'USA',quantity:'2',budget:'100 per placement',currency:'USD',deadline:'Next month',targetUrls:'https://client.example/product',anchors:'To discuss',criteria:'Relevant publishers',content:'Writing needed',note:'Please share suitable options.'};
+ assert.equal((await request('/api/inquiry',{token:link.token,origin:'https://evil.test',body:brief})).status,403);
+ assert.equal((await request('/api/inquiry',{token:link.token,body:{...brief,payment:{verified:true,amount:500}}})).status,400,'Cannot inject payment or acceptance fields');
+ assert.equal((await request('/api/inquiry',{token:link.token,body:{...brief,consent:false}})).status,400);
+ const submissions=await Promise.all([request('/api/inquiry',{token:link.token,body:brief}),request('/api/inquiry',{token:link.token,body:brief})]);
+ for(const r of submissions)assert.equal(r.status,200,JSON.stringify(r));assert.equal(submissions[0].data.receipt,link.id);assert.equal(submissions[1].data.receipt,link.id);
+ const current=(await request('/api/records',{owner:'a'})).data.records.find(r=>r.id===leadId).payload;
+ assert.equal(current.requirements.niche,'Owner-reviewed niche','Prior owner-reviewed values are not overwritten');assert.equal(current.requirements.country,'USA');assert.equal(current.messages.length,1);assert.equal(current.messages[0].direction,'inbound');assert.match(current.messages[0].body,/identity has not been independently verified/);assert.equal(current.stage,'Replied');assert.equal(current.service,'Article Writing','Early-stage service follows the explicitly submitted request');assert.equal(current.payment,undefined);assert.equal(current.orderAccepted,undefined);
+ assert.equal((await db.prepare("SELECT count(*) n FROM nexora_agent_alerts WHERE title='Client requirements received'").first()).n,1,'Exactly one alert after concurrent retries');
+ stored=await db.prepare('SELECT * FROM nexora_intake_links WHERE id=?').bind(link.id).first();assert.equal(stored.state,'submitted');assert.equal(JSON.parse(stored.submission).budget,'100 per placement');
+ const saved=(await request('/api/intake?leadId='+leadId,{owner:'a'})).data.links[0];assert.equal(saved.submission.name,brief.name);assert.equal((await request('/api/intake?leadId='+leadId,{owner:'b'})).data.links.length,0);
+ assert.equal((await request('/api/inquiry',{token:link.token,body:{...brief,note:'Changed after submission'}})).status,400);
+ assert.equal((await request('/api/inquiry',{token:link.token})).data.state,'submitted');
+ const rotated={id:randomUUID(),leadId,token:randomBytes(32).toString('hex')};assert.equal((await create('a',rotated)).status,200);
+ const replacement={id:randomUUID(),leadId,token:randomBytes(32).toString('hex')};assert.equal((await create('a',replacement)).status,200);assert.equal((await request('/api/inquiry',{token:rotated.token})).status,404,'Replacing a link revokes the previous open link');
+ await request('/api/intake',{owner:'a',body:{action:'revoke',id:replacement.id}});assert.equal((await request('/api/inquiry',{token:replacement.token})).status,404);
+ const blocked={id:randomUUID(),leadId,token:randomBytes(32).toString('hex')};assert.equal((await create('a',blocked)).status,200);
+ await db.prepare("UPDATE nexora_records SET payload=json_set(payload,'$.stage','Do not contact') WHERE id=?").bind(leadId).run();
+ assert.equal((await request('/api/inquiry',{token:blocked.token})).status,404);assert.equal((await request('/api/inquiry',{token:blocked.token,body:{...brief,submissionId:randomUUID()}})).status,400);assert.equal((await create('a',{id:randomUUID(),leadId,token:randomBytes(32).toString('hex')})).status,400);
+ const expiryId=randomUUID();assert.equal((await request('/api/records',{owner:'a',body:{id:expiryId,kind:'lead',payload:{...lead,requirements:{}}}})).status,200);
+ const expired={id:randomUUID(),leadId:expiryId,token:randomBytes(32).toString('hex')};assert.equal((await create('a',expired)).status,200);await db.prepare("UPDATE nexora_intake_links SET expires_at='2000-01-01T00:00:00.000Z' WHERE id=?").bind(expired.id).run();assert.equal((await request('/api/inquiry',{token:expired.token})).status,404);
+ const page=await mf.dispatchFetch('https://nexora.test/inquiry');assert.equal(page.status,200);const html=await page.text();assert.match(html,/Checking your private link/);assert.doesNotMatch(html,/private-cost|Owner-reviewed niche|Actual submitted name/);
+ console.log('PASS: real D1 intake roundtrip; owner-only issue/revoke/read; hashed fragment tokens; expiry and suppression; exact-one concurrent submission; preserved owner requirements; automatic alert and follow-up stop; no order/payment forgery or public record exposure.');
+}finally{await mf.dispose();}

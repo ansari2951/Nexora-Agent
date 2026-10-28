@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1792666769713,
+      "tag": "0000_new_whizzer",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1792677058007,
+      "tag": "0001_cultured_thunderbolt",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792678913202,
+      "tag": "0002_bright_madame_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792752355967,
+      "tag": "0003_freezing_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792838622606,
+      "tag": "0004_sloppy_human_fly",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792947044465,
+      "tag": "0005_perfect_machine_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793092000000,
+      "tag": "0006_n8n_runner",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793099000000,
+      "tag": "0007_n8n_account_scopes",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "name": "Nexora — approved LinkedIn account actions",
+  "active": false,
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Manual account test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "timer",
+      "name": "Every 30 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "notes",
+      "name": "Read before activation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        -50
+      ],
+      "parameters": {
+        "width": 420,
+        "height": 420,
+        "content": "# Separate execution scopes\nAssign the Nexora runner Header Auth credential to both HTTP nodes. Enable only the runner scopes you want in Nexora.\n\nPosting: only due posts with an existing exact owner approval.\nNetwork: actual connected/enabled provider + saved per-feature rules + no-paid-provider mode off. Headline/About need exact approval snapshots.\n\nAt most one connection page, one network action and one due post/cycle. No model generates actions here. The server rechecks account identity and actual permission. No automatic retries. Unknown outcomes remain uncertain; check receipts before any further action.\n\nImport inactive. Test manually before publishing."
+      }
+    },
+    {
+      "id": "run-authorized-cycle",
+      "name": "Run authorized cycle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        280,
+        0
+      ],
+      "retryOnFail": false,
+      "parameters": {
+        "method": "POST",
+        "url": "https://nexora-growth-faizan.taliagranger9.chatgpt.site/api/n8n/account",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"action\":\"cycle\"}",
+        "options": {
+          "timeout": 180000
+        }
+      }
+    },
+    {
+      "id": "verify-account-receipts",
+      "name": "Verify account receipts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        580,
+        0
+      ],
+      "retryOnFail": false,
+      "parameters": {
+        "method": "POST",
+        "url": "https://nexora-growth-faizan.taliagranger9.chatgpt.site/api/n8n/account",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"action\":\"status\"}",
+        "options": {
+          "timeout": 180000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual account test": {
+      "main": [
+        [
+          {
+            "node": "Run authorized cycle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 30 minutes": {
+      "main": [
+        [
+          {
+            "node": "Run authorized cycle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run authorized cycle": {
+      "main": [
+        [
+          {
+            "node": "Verify account receipts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Karachi",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 600
+  },
+  "pinData": {},
+  "tags": []
+}

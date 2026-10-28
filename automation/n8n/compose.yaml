@@ -1,0 +1,20 @@
+name: nexora-n8n
+services:
+  n8n:
+    image: n8nio/n8n:2.44.7
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:5678:5678'
+    environment:
+      TZ: Asia/Karachi
+      GENERIC_TIMEZONE: Asia/Karachi
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'true'
+      N8N_DIAGNOSTICS_ENABLED: 'false'
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: none
+      EXECUTIONS_DATA_SAVE_ON_ERROR: none
+      EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS: 'false'
+      EXECUTIONS_DATA_PRUNE: 'true'
+    volumes:
+      - nexora_n8n_data:/home/node/.n8n
+volumes:
+  nexora_n8n_data:

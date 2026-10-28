@@ -1,0 +1,465 @@
+{
+  "name": "Nexora — internal research, requirements and proposals",
+  "nodes": [
+    {
+      "id": "setup-notes",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        -100
+      ],
+      "parameters": {
+        "content": "# Nexora internal runner\n1. Create Nexora runner credential (Agent control → n8n).\n2. Set Header Auth on all Nexora HTTP nodes: Authorization = Bearer <runner token>.\n3. Set Gemini Header Auth: x-goog-api-key = your API key. Never put keys in this workflow JSON.\n4. Check the Gemini model available in your account.\n5. Enable model processing + runner in Nexora. Execute manually, inspect saved results, then publish this workflow.\n\nNo messages, invitations, profile edits, orders, payments or posts are executed here. At most two internal tasks/run. No automatic HTTP retries. Google Search grounding/quota can incur provider charges. Keep execution data private.",
+        "height": 520,
+        "width": 420
+      }
+    },
+    {
+      "id": "manual-test",
+      "name": "Manual test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "every-30-minutes",
+      "name": "Every 30 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        180
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "claim-1",
+      "name": "Claim 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://nexora-growth-faizan.taliagranger9.chatgpt.site/api/n8n/worker",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"action\":\"tick\"}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "has-task-1",
+      "name": "Has task 1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-job",
+              "leftValue": "={{ Boolean($json.job && $json.job.id) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gemini-1",
+      "name": "Gemini 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemini-3.8-flash\", store: false, system_instruction: $json.instructions, input: JSON.stringify({job: $json.job.type, input: $json.job.input, record: $json.record, settings: $json.settings, outputSchema: $json.outputSchema}), ...([\"research\",\"profile_research\",\"content\",\"discover\"].includes($json.job.type) ? {tools:[{type:\"google_search\"}]} : {}) }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "parse-result-1",
+      "name": "Parse result 1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        -100
+      ],
+      "parameters": {
+        "jsCode": "const work = $('Claim 1').first().json;\nconst raw = $input.first().json;\nconst base = {action:'complete', job_id:work.job.id, lease:work.job.lease, result:{}};\ntry {\n if (raw.error) throw new Error('AI provider request failed; check credentials, model and quota in n8n.');\n const text = raw.output_text || (raw.steps || []).filter(s=>s.type==='model_output').flatMap(s=>s.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\\n') || (raw.outputs || []).filter(c=>c.type==='text').map(c=>c.text).join('\\n');\n if (!text) throw new Error('AI returned no final text. Review provider response; no retry performed.');\n base.result = JSON.parse(text.trim().replace(/^```(?:json)?\\s*/i,'').replace(/\\s*```$/,''));\n if (!base.result || typeof base.result!=='object' || Array.isArray(base.result)) throw new Error('AI did not return a JSON object.');\n if (['research','profile_research','discover'].includes(work.job.type) && (base.result.identityMatched || work.job.type==='discover')) {\n  const citations=(raw.steps||[]).filter(s=>s.type==='model_output').flatMap(s=>s.content||[]).flatMap(c=>c.annotations||[]).filter(a=>a.type==='url_citation').map(a=>a.url);\n  const sources=base.result.sources || (base.result.prospects||[]).flatMap(p=>p.sources||[]);\n  if (!citations.length || !sources.length || sources.some(s=>!citations.includes(s.url))) throw new Error('Research sources were not backed by provider citation metadata. Exact profile evidence remains unknown.');\n }\n} catch(e) { base.result={}; base.blocked_reason='n8n: '+e.message; }\nreturn [{json:base}];"
+      }
+    },
+    {
+      "id": "save-result-1",
+      "name": "Save result 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://nexora-growth-faizan.taliagranger9.chatgpt.site/api/n8n/worker",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "claim-2",
+      "name": "Claim 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://nexora-growth-faizan.taliagranger9.chatgpt.site/api/n8n/worker",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"action\":\"tick\"}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "has-task-2",
+      "name": "Has task 2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-job",
+              "leftValue": "={{ Boolean($json.job && $json.job.id) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gemini-2",
+      "name": "Gemini 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemini-3.8-flash\", store: false, system_instruction: $json.instructions, input: JSON.stringify({job: $json.job.type, input: $json.job.input, record: $json.record, settings: $json.settings, outputSchema: $json.outputSchema}), ...([\"research\",\"profile_research\",\"content\",\"discover\"].includes($json.job.type) ? {tools:[{type:\"google_search\"}]} : {}) }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "parse-result-2",
+      "name": "Parse result 2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        -100
+      ],
+      "parameters": {
+        "jsCode": "const work = $('Claim 2').first().json;\nconst raw = $input.first().json;\nconst base = {action:'complete', job_id:work.job.id, lease:work.job.lease, result:{}};\ntry {\n if (raw.error) throw new Error('AI provider request failed; check credentials, model and quota in n8n.');\n const text = raw.output_text || (raw.steps || []).filter(s=>s.type==='model_output').flatMap(s=>s.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\\n') || (raw.outputs || []).filter(c=>c.type==='text').map(c=>c.text).join('\\n');\n if (!text) throw new Error('AI returned no final text. Review provider response; no retry performed.');\n base.result = JSON.parse(text.trim().replace(/^```(?:json)?\\s*/i,'').replace(/\\s*```$/,''));\n if (!base.result || typeof base.result!=='object' || Array.isArray(base.result)) throw new Error('AI did not return a JSON object.');\n if (['research','profile_research','discover'].includes(work.job.type) && (base.result.identityMatched || work.job.type==='discover')) {\n  const citations=(raw.steps||[]).filter(s=>s.type==='model_output').flatMap(s=>s.content||[]).flatMap(c=>c.annotations||[]).filter(a=>a.type==='url_citation').map(a=>a.url);\n  const sources=base.result.sources || (base.result.prospects||[]).flatMap(p=>p.sources||[]);\n  if (!citations.length || !sources.length || sources.some(s=>!citations.includes(s.url))) throw new Error('Research sources were not backed by provider citation metadata. Exact profile evidence remains unknown.');\n }\n} catch(e) { base.result={}; base.blocked_reason='n8n: '+e.message; }\nreturn [{json:base}];"
+      }
+    },
+    {
+      "id": "save-result-2",
+      "name": "Save result 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://nexora-growth-faizan.taliagranger9.chatgpt.site/api/n8n/worker",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "verify-runner",
+      "name": "Verify runner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2800,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://nexora-growth-faizan.taliagranger9.chatgpt.site/api/n8n/worker",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"action\":\"status\"}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Claim 1": {
+      "main": [
+        [
+          {
+            "node": "Has task 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has task 1": {
+      "main": [
+        [
+          {
+            "node": "Gemini 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Claim 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 1": {
+      "main": [
+        [
+          {
+            "node": "Parse result 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse result 1": {
+      "main": [
+        [
+          {
+            "node": "Save result 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save result 1": {
+      "main": [
+        [
+          {
+            "node": "Claim 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim 2": {
+      "main": [
+        [
+          {
+            "node": "Has task 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has task 2": {
+      "main": [
+        [
+          {
+            "node": "Gemini 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verify runner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 2": {
+      "main": [
+        [
+          {
+            "node": "Parse result 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse result 2": {
+      "main": [
+        [
+          {
+            "node": "Save result 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save result 2": {
+      "main": [
+        [
+          {
+            "node": "Verify runner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual test": {
+      "main": [
+        [
+          {
+            "node": "Claim 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 30 minutes": {
+      "main": [
+        [
+          {
+            "node": "Claim 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Karachi",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 600
+  },
+  "pinData": {},
+  "tags": []
+}

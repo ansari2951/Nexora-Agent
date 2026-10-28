@@ -1,0 +1,7 @@
+'use client';
+import {useState} from 'react';
+import {ArrowRight} from 'lucide-react';
+export default function RegisterWorkspace({name}:{name:string}){
+ const [displayName,setName]=useState(name),[phone,setPhone]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ return <form className="auth-register" onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');try{const r=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:displayName,phone})}),b:any=await r.json();if(!r.ok)throw Error(b.error);window.location.assign('/');}catch(e:any){setError(e.message);setBusy(false)}}}><label className="field"><span>Your display name</span><input value={displayName} required maxLength={100} onChange={e=>setName(e.target.value)}/></label><label className="field"><span>Contact phone (optional)</span><input type="tel" autoComplete="tel" placeholder="+923001234567" pattern="[+][1-9][0-9]{6,14}" maxLength={16} value={phone} onChange={e=>setPhone(e.target.value)}/><small className="muted">Include country code. Saved privately for contact; no SMS, OTP or recovery is enabled.</small></label>{error&&<p className="notice error" role="alert">{error}</p>}<button className="btn login-primary" disabled={busy} type="submit">{busy?'Creating workspace…':'Create my private workspace'}<ArrowRight size={18}/></button><p className="muted small">An existing workspace is kept. Signing up again never resets your saved work.</p></form>;
+}

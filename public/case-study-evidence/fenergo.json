@@ -1,0 +1,182 @@
+{
+  "project": "Fenergo — RegTech Outreach & Placement Case Study",
+  "reviewedOn": "2026-10-27",
+  "brandUrl": "https://www.fenergo.com/",
+  "relationshipSource": "Faizan identifies Fenergo as a client. Direct versus agency-subcontract relationship not independently verified.",
+  "contributionSource": "Faizan explicitly confirmed outreach + placements and confirmed all three selected article URLs as his placements in this conversation. Public pages verify content/link presence, not the commercial relationship.",
+  "corePlacements": [
+    {
+      "publisher": "MacSources",
+      "title": "How to Choose the Right Client Lifecycle Management Software",
+      "url": "https://macsources.com/how-to-choose-the-right-client-lifecycle-management-software/",
+      "publishedDate": "2026-08-25",
+      "evidence": "Contextual link labelled client lifecycle management software points to Fenergo’s CLM page.",
+      "target": "https://www.fenergo.com/client-lifecycle-management",
+      "kind": "Contextual product link"
+    },
+    {
+      "publisher": "Our Code World",
+      "title": "AI Due Diligence vs Manual Review: What Wins in 2026",
+      "url": "https://ourcodeworld.com/articles/read/5040/ai-due-diligence-vs-manual-review-what-wins-in-2026",
+      "publishedDate": null,
+      "evidence": "Article names Fenergo and links its 2025 financial-crime research in the manual-review discussion.",
+      "target": "https://resources.fenergo.com/newsroom/global-financial-institutions-struggle-with-rising-client-losses-and-compliance-costs-as-ai-adoption-increases-fenergo",
+      "kind": "Research citation"
+    },
+    {
+      "publisher": "PC Tech Magazine",
+      "title": "AI-Powered Institutional Onboarding vs Manual Intake",
+      "url": "https://pctechmag.com/2026/09/ai-powered-institutional-onboarding-vs-manual-intake-2/",
+      "publishedDate": "2026-09-25",
+      "evidence": "Article cites and links Fenergo’s 2025 research in its institutional-onboarding discussion.",
+      "target": "https://resources.fenergo.com/newsroom/global-financial-institutions-struggle-with-rising-client-losses-and-compliance-costs-as-ai-adoption-increases-fenergo",
+      "kind": "Research citation"
+    }
+  ],
+  "additionalReferences": [
+    {
+      "url": "https://thefinancialcurrent.com/news/2026-09-28-fenergo-reported-sale",
+      "review": "Unavailable in research tool; not used as proof",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://www.tradersmagazine.com/departments/technology/fenergo-deploys-on-demand-regulatory-rules/",
+      "review": "Historical coverage dated 2019-02-21; context only",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://zipdo.co/best/financial-regulatory-compliance-software/",
+      "review": "Fenergo appears in software roundup; independent review context, not placement credit",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://sigmadax.com/best/financial-services-regulatory-compliance-software/",
+      "review": "Fenergo appears in software roundup; context only",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://financialit.net/news/cloud/fenergo-deploys-demand-regulatory-rules",
+      "review": "Historical coverage dated 2019-02-13; context only",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://techbullion.com/kyc-software-explained-features-benefits-and-use-cases/",
+      "review": "KYC explainer links Fenergo; 2026-01-03; additional reference, no personal attribution assigned",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://techbullion.com/aml-fines-have-reached-2-7-billon-in-2021-heres-why-they-wont-slow-down-in-2022/",
+      "review": "403 in research tool; not used as proof",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://techbullion.com/10-popular-regtech-startups-ireland/",
+      "review": "Historical Fenergo listing dated 2017-07-19; context only",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://techbullion.com/10-popular-kyc-and-cdd-startups/",
+      "review": "Historical Fenergo listing dated 2017-07-08; context only",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://techbullion.com/banks-will-soon-acquiring-fintech-startups-instead-investing/",
+      "review": "403 in research tool; not used as proof",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://www.crowdfundinsider.com/2026/01/257243-dublin-regtech-fenergo-assists-smbc-america-with-digital-onboarding/",
+      "review": "Fenergo company coverage dated 2026-01-12; context only",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://axiobench.com/best/regtech-software/",
+      "review": "Fenergo appears in RegTech roundup; context only",
+      "creditedToFaizan": false
+    },
+    {
+      "url": "https://www.softwr.com/software/fenergo",
+      "review": "Fenergo product listing; context only",
+      "creditedToFaizan": false
+    }
+  ],
+  "limits": {
+    "rankings": null,
+    "traffic": null,
+    "revenue": null,
+    "aiCitations": null,
+    "deliveryDates": null,
+    "linkRelAttributes": null,
+    "fees": null,
+    "campaignDuration": null,
+    "clientTestimonial": null
+  },
+  "notes": [
+    "Article publication dates are not assumed to be Faizan’s delivery dates.",
+    "The Our Code World header date was not treated as an article publication date.",
+    "No followed-link, ranking or AI-search performance claim is made.",
+    "No supplied reference was verified as a 2025 publication. A 2026 update or an as-of date is not treated as the original publication date."
+  ],
+  "additionalRecentReferences": [
+    {
+      "publisher": "TechBullion",
+      "title": "KYC Software Explained: Features, Benefits, and Use Cases",
+      "url": "https://techbullion.com/kyc-software-explained-features-benefits-and-use-cases/",
+      "dateLabel": "3 January 2026 (previously observed article date)",
+      "kind": "Contextual KYC product reference",
+      "evidence": "The reviewed article contains a KYC software link to Fenergo.",
+      "availability": "Article content available in research tool"
+    },
+    {
+      "publisher": "Crowdfund Insider",
+      "title": "Dublin Regtech Fenergo Assists SMBC America with Digital Onboarding",
+      "url": "https://www.crowdfundinsider.com/2026/01/257243-dublin-regtech-fenergo-assists-smbc-america-with-digital-onboarding/",
+      "dateLabel": "12 January 2026",
+      "kind": "Company news coverage",
+      "evidence": "Fenergo and its onboarding work are covered; title/date independently appear in publisher search results.",
+      "availability": "Previously read article; latest direct fetch returned 403, search listing still available"
+    },
+    {
+      "publisher": "ZipDo",
+      "title": "Top 10 Best Financial Regulatory Compliance Software of 2026",
+      "url": "https://zipdo.co/best/financial-regulatory-compliance-software/",
+      "dateLabel": "Published 18 February 2026; updated 4 October 2026",
+      "kind": "Software comparison / product listing",
+      "evidence": "Fenergo appears as a named product with an outbound Fenergo link.",
+      "availability": "Available in research tool"
+    },
+    {
+      "publisher": "Sigmadax",
+      "title": "Top 10 Best Financial Services Regulatory Compliance Software of 2026",
+      "url": "https://sigmadax.com/best/financial-services-regulatory-compliance-software/",
+      "dateLabel": "Updated 22 September 2026; original publication date not established",
+      "kind": "Software comparison / product listing",
+      "evidence": "The product comparison includes Fenergo and a Visit Fenergo link.",
+      "availability": "Available in research tool"
+    },
+    {
+      "publisher": "Axiobench",
+      "title": "Top 10 Best Regtech Software of 2026",
+      "url": "https://axiobench.com/best/regtech-software/",
+      "dateLabel": "Updated 3 September 2026; original publication date not established",
+      "kind": "RegTech software comparison",
+      "evidence": "Fenergo appears in the RegTech software comparison.",
+      "availability": "Available in research tool"
+    },
+    {
+      "publisher": "Softwr",
+      "title": "Fenergo Review: Pricing, Features & Verdict",
+      "url": "https://www.softwr.com/software/fenergo",
+      "dateLabel": "Content references 1 September 2026; publication date not established",
+      "kind": "Product profile / software directory",
+      "evidence": "Dedicated Fenergo profile with a Visit site link.",
+      "availability": "Available in research tool"
+    }
+  ],
+  "referenceSummary": {
+    "reviewedRecentUrls": 9,
+    "specificallyConfirmedPlacementUrls": 3,
+    "additionalRecentReferences": 6,
+    "note": "Additional six references added at owner request. Inclusion does not assign authorship or prove personal placement responsibility."
+  }
+}

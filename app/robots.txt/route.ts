@@ -1,0 +1,1 @@
+export async function GET(){return new Response('User-agent: *\nAllow: /work-with-faizan\nAllow: /privacy\nDisallow: /\n\nSitemap: https://nexora-growth-faizan.taliagranger9.chatgpt.site/sitemap.xml\n',{headers:{'Content-Type':'text/plain; charset=utf-8'}});}
