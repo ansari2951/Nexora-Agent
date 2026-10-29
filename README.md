@@ -1,88 +1,181 @@
-# Nexora
-Private LinkedIn research and sales workspace for Faizan. See START_HERE_ROMAN_URDU.md for usage and DEVELOPER.md for the hosting framework. Public-profile evidence is captured only where accessible; unknown sections are never invented.
+# Nexora Agent
 
-Data is saved to Cloudflare D1 and isolated by ChatGPT user ID. All record and agent endpoints require authentication; writes also enforce same-origin requests. LinkedIn OAuth and approved text-post publishing are implemented; app credentials and member authorization must be configured before live use. Personal messaging, connection access and profile editing remain blocked without an approved integration. AI runs require server-side configuration and are limited to 15 requests per owner per hour. Client proposal exports exclude publisher costs. See tests/engine.test.mjs for critical workflow verification.
+A private LinkedIn research, content and sales workspace.
 
-See LINKEDIN_SETUP.md for connection setup and AUTONOMY_RUNBOOK.md for background execution. Secrets are never returned to the client or MCP tools.
+**Live app:** [Open Nexora](https://nexora-agent-ansari-9b3a.vercel.app/)
 
+Nexora mein prospects aur campaign details save karo, research aur drafts tayyar karo, client requirements organize karo aur external action se pehle review karo. **Draft, approval aur actual LinkedIn execution alag stages hain.**
 
-## Account access
+## Features
 
-The public entry route is a real ChatGPT sign-in page; workspace records and all API mutations require platform-authenticated identity. `/login` and `/privacy` are available without sign-in. Each visitor has a private workspace. Do not build a separate password database or accept an identity from request bodies.
+| Feature | Kaam |
+| --- | --- |
+| Private workspace | Clerk identity ke mutabiq har account ke records alag |
+| Prospect management | LinkedIn URLs, company, research evidence, notes, stages aur supported CSV import |
+| Research & profile studio | Accessible public evidence se research aur profile suggestions; missing facts invent nahi hote |
+| Message planning | Personalized drafts, recorded replies aur follow-up dates |
+| Content & posts | Drafts, exact-content approval, scheduling aur publishing history |
+| Approvals | Saved post, message aur supported profile-change snapshots |
+| Client requirements | Campaign brief aur private, expiring, single-use requirement links |
+| Publisher inventory | Saved options ko budget, currency, niche aur margin se match karna |
+| Proposals & sales | Client offers, requirements, order/payment records aur private alerts |
+| Agent control | Persistent queues, limits, pause controls aur blocked reasons |
+| Optional integrations | Official LinkedIn posting, Unipile, n8n aur AI processing |
+| Diagnostics | `/system` connection guide; `/api/health` minimal database check |
+| Public service page | `/work-with-faizan` services, samples aur inquiry form |
 
-`NEXORA_OWNER_EMAIL` and `NEXORA_OWNER_WORKSPACE_ID` are server configuration. They map the platform-authenticated business owner's exact email to the existing workspace; the original account retains access. Other visitors cannot see that workspace. This changes application access, not the Sites project's hosting ownership. Changing a name or email in a saved settings record does not grant access. Set both values with native runtime settings and deploy; never put tokens or credentials in source.
+## Current status — 29 October 2026 (PKT)
 
-LinkedIn authorization and approved publication history belong to the resolved workspace. Each unrelated account must connect separately. Partner messaging, invitations and profile-edit permissions are not provided by OpenID Connect or w_member_social; do not mark those capabilities enabled without a working, authorized integration.
+Yeh last verified checkpoint hai, continuously monitored status nahi.
 
+| Part | Verified / implemented | Pending |
+| --- | --- | --- |
+| Hosting | Next.js production deployment on Vercel is READY | Hosting limits/account availability still apply |
+| Login | Google/email sign-in and sign-up screens load through Clerk | Full real-user signup/session flow not yet verified; Clerk development mode |
+| Database | Live Turso connection/schema initialization passed health check | Two real signed-in users not yet tested end to end |
+| Isolation | Verified server identity and owner-scoped queries; local tenant-filter test passed | Not a complete security audit |
+| Other login methods | — | Phone, Facebook and GitHub not configured |
+| LinkedIn posting | OAuth and approved-post execution code implemented | Connect/verify in the new Vercel workspace |
+| Network actions | Optional Unipile integration code implemented | Live messages/invitations/profile edits not connected or verified here |
+| Background runner | Two inactive n8n workflow exports and scoped runner authentication | Credentials, current URLs, activation and actual scheduled execution |
+| Previous workspace | Previous app remains separate | Old data, tokens, approvals and connections not migrated |
 
-## Client requirement intake
+**Full 24/7 LinkedIn automation is not verified active.** App deployment does not itself activate a workflow, provide an AI subscription or grant LinkedIn access.
 
-In a saved prospect’s Requirements tab, create a private, seven-day, single-use link. Only the raw browser session receives the full token; the database stores its SHA-256 hash. The token is carried in a URL fragment and an Authorization header, not a request URL. The owner can revoke open links; replacing an open link revokes the prior one. No messages are sent to the client by creating or copying a link.
+## Use kaise karna hai
 
-Clients submit a two-step brief without ChatGPT sign-in. One atomic D1 batch fills missing requirements, appends one clearly labelled inbound brief, marks early contacts Replied, and creates an owner-only alert. Current owner-entered requirements are preserved, and the full client submission is available for comparison. The submitted service updates early leads only; advanced deal stages retain their existing scope. Research/response/proposal planning remains internal and deduplicated. No form field can confirm an order, accept pricing or verify payment.
+### 1. Account banao
 
-Submission IDs and canonical payload hashes make exact retries safe. Concurrent submissions cannot append duplicate messages or alerts. Expired, revoked, suppressed or replaced links cannot submit. Client identity is not independently verified by possession of a link. The public form exposes no private workspace records, publisher costs or conversation history.
+1. [Nexora](https://nexora-agent-ansari-9b3a.vercel.app/) kholo aur **Create account** select karo.
+2. Google ya email ka available option choose karo aur Clerk ki required verification complete karo.
+3. Agli baar isi identity se sign in karo. Doosra account alag workspace kholega.
+4. Password, OTP aur API key chat ya GitHub issue mein mat likho.
 
-Run `node tests/intake.integration.mjs` against a fresh built Worker to verify the entire API/D1 flow, including isolation, expiry, concurrency, idempotency, suppression and payment-forgery rejection.
+Vercel app ke liye ChatGPT sign-in required nahi. Purane Sites workspace ka data naye account mein automatically nahi aata.
 
-### Background work from workspace buttons
-Without a separate server AI key, research/review/draft buttons enqueue the selected saved record for the connected ChatGPT runner. Tasks are owner-scoped, deduplicated and visible in Agent control. Completion remains subject to the configured daily limit and runner schedule. Copy-brief controls remain optional. These internal requests never send LinkedIn messages, invitations, profile edits or posts.
+### 2. Profile aur settings save karo
 
-### Owner approvals and account entry
-- `/login` and `/signup` are separate pages backed by Sites ChatGPT authentication. Signup creates private workspace defaults only after an authenticated user submits the form; it never resets existing settings.
-- `Approvals` stores immutable post, message and profile before/after snapshots. Each request creates a private in-app alert. Generated posts, messages and profile suggestions request approval automatically. The notification bell refreshes while the workspace is open; email and closed-browser push are not configured.
-- Approved posts enter the existing LinkedIn queue only with actual posting authorization. Approval/rejection and insertion are transactional; changed source/conversation requires fresh review. Messages and profile changes record approval only: execution is not connected.
-- LinkedIn login is not full-account API permission. Nexora does not accept passwords or browser cookies, and there is no hosted browser-session bridge. Publishing uses the OAuth account and granted posting scope.
-- Validation: 15 policy/engine checks plus built Worker/D1 account, intake, OAuth, publishing and review suites. LinkedIn network calls are mocked, with no external test messages/posts.
+- Settings mein naam, services, markets aur follow-up preferences review karo.
+- Profile studio mein apna exact LinkedIn profile URL save karo.
+- Agent control mein operating rules, limits aur actual connection status dekho.
 
-### Growth rules
-- Follow-up timing supports calendar days (2 days = 48 hours, including weekends) and business days. Existing preferences without a unit retain business-day behavior. The planner and completion checks use each account's saved settings; replies, suppression, a newer sent message or a changed due date cancel stale work. This prepares approval requests, not background LinkedIn messages.
-- Public owner-profile research runs weekly when an exact personal URL is saved and automatic research is enabled. The runner extracts accessible sections before preparing optimization previews; missing sections remain unknown. It does not fetch private connection lists or edit LinkedIn.
-- Explicit client offers require a quote from the latest incoming message. The saved offer retains its message reference and receipt date and creates an owner alert; it never confirms an order or payment. General interest is not an offer.
-- Internal work prioritizes replies, due follow-ups and proposals before new discovery. Content generation creates approval requests; publishing uses the separately connected posting account.
-- Validation: 19 policy checks and six built Worker/D1 integration suites, including growth, intake, account isolation, reviews and mocked LinkedIn publishing.
+### 3. Prospect research karo
 
-### Action center and direct approved publishing
-- Action center groups live owner-scoped workflow state, pending decisions, calculated follow-up dates and evidence-backed client offers. It refreshes while open and links to the relevant workflow or current client record.
-- Plan all eligible work uses the existing persistent planner, preserving limits, deduplication and review requirements. Pause/resume controls internal jobs; previously approved posts are managed separately.
-- Approvals offers `Approve & publish now` for due content, plus publication of a specific already-approved due post. The owner-selected post ID is validated and filtered server-side; another queued post is never substituted. Future, missing, foreign, published and uncertain posts cannot be resent through this action.
-- Client offer/requirements/proposal notifications open the associated private client record. Publication alerts open posting history.
-- Validation: production build and TypeScript, existing review/growth integration suites, and expanded mocked LinkedIn tests for selected-post isolation, owner boundaries, future-date blocking and no retries of uncertain outcomes. Local preview authentication prevents checking private screens without a signed-in hosted session.
+1. **Prospects** mein exact profile URL, name, company aur available notes save karo; supported CSV bhi import kar sakte ho.
+2. Research request karo aur source evidence verify karo.
+3. Missing information ko verified mat mark karo. Incomplete research message planning ko block kar sakti hai.
+4. Agar task queued/blocked ho, Agent control mein reason dekho. Queue entry completion ka proof nahi.
 
-### Unipile account execution (optional, separate from official posting)
-- `LinkedIn` now includes owner-scoped Unipile DSN/API-key setup, Hosted Auth, verified callback binding, separate standing-authorization switches, daily cap, connection pagination and action receipts. Keys are encrypted with workspace-bound authenticated encryption in a private server table, never generic records/exports or MCP output.
-- Set up a Unipile API account (billing/trial managed there), enter its DSN/key in the private setup form, save the exact LinkedIn URL in Profile studio, then connect through Hosted Auth. New credentials, provider terms, checkpoints and any subscription need the user's participation. No paid plan is purchased by Nexora.
-- A successful callback must have a live, healthy LinkedIn account, matching exact saved profile, single-use unexpired nonce and no other workspace's account binding. A mere login/redirect is not proof of connection.
-- `nexora_sync_network` imports one page of connections. `nexora_run_network` syncs up to three tracked conversations and dispatches at most one authorized write under an exclusive owner lease. The runner and UI expose actual state; stale histories, opt-outs, changed reviews, unknown identities and changed accounts block writes. No InMail spend is enabled.
-- Message/reply/follow-up automation uses existing researched review snapshots. Per-message approval is required unless the owner saves the explicit auto-message authorization. Follow-ups still require the saved due time; a new reply or existing intro conversation cancels stale work. Confirmed provider message IDs are recorded as sent before follow-up timing starts.
-- Invitations/acceptance require owner switches and matching researched prospects. Profile execution supports only approved headline/About changes, compares live before text and verifies after text. Featured/experience removal and arbitrary post deletion remain unsupported.
-- External writes are persisted/claimed before dispatch. Unknown or interrupted outcomes never retry; confirmed receipts survive record-update errors. Cancel affects queued actions; disconnect stops Nexora execution but provider access must also be revoked in Unipile.
-- New native agent operations are separate from internal-only task tools. Existing posting remains through official OAuth and explicit owner approval.
-- Validation: built Worker and isolated D1 tests mock every provider call. Coverage includes encrypted keys, DSN restrictions, auth/CSRF, one-use identity-bound callbacks, account isolation, real-schema sync/send/edit, live opt-out, owner lease/concurrent runs, daily cap and uncertain outcomes never retried. A real Unipile account is still required for live end-to-end validation.
+AI output ke liye configured model service ya working runner chahiye. Repository mein live AI credentials included nahi.
 
-## No-provider workflow
-The owner can choose **Activate without paid provider** on Overview, LinkedIn or Settings.
-This saves an owner-scoped `noPaidProvider` control, enables the internal research/drafting
-workflow, selects the linked ChatGPT queue rather than direct model API calls, and sets
-follow-up timing to two calendar days. Existing maximum-follow-up preferences, records,
-approvals and official posting authorization are preserved. Unipile HTTP access and
-credential setup are rejected while this mode is active; saved provider execution rules
-are turned off. This does not revoke a provider session or cancel provider billing.
-It does not create a free AI subscription or promise unlimited hosting/ChatGPT usage.
-Messages, invitations and profile edits remain manual. An outbound message recorded
-by its owner starts the follow-up timer; a recorded reply stops the no-reply sequence.
-Approved posts can still use the separately connected official LinkedIn posting flow.
-Choosing optional provider setup only removes the provider gate; it never enables sends,
-purchases a subscription, or authorizes new provider access by itself.
+### 4. Message aur follow-up prepare karo
 
-## Public inbound campaign page
-`/work-with-faizan` is a public service and inquiry page for the configured business owner.
-Its form creates an unverified incoming lead and a private in-app alert; it never sends
-email, accepts an order, publishes a post or verifies payment. `NEXORA_OWNER_WORKSPACE_ID`
-is server-controlled; request bodies cannot select a recipient workspace. Inquiries use
-strict consent/schema/origin validation, a honeypot, idempotent receipts and atomic hourly
-submission limits (5 per hashed network address, 20 total). Existing email suppression is
-preserved. No raw network address is persisted in the lead record. Public-page clients do
-not need a Nexora account. The contact email is visible only to the owner of the receiving
-workspace. Configure inbound-only growth in Agent control to stop cold discovery and
-first-message queueing while keeping profile/content work and actual inquiry replies.
+1. Saved prospect par draft tayyar karo.
+2. Recipient, research, facts, offer aur tone review karo.
+3. **Is project ka operating rule: har LinkedIn post, message, invitation aur profile edit se pehle explicit approval.**
+4. Optional provider ke automatic send/invitation switches off rakho jab individual approval required ho. Connector install karna action ki approval nahi.
+5. Provider connected na ho to approved text manually use karo; isay Nexora ki execution receipt mat samjho.
+6. Actual sent message/reply sahi record karo. Replies, paused contacts aur opt-outs stale follow-ups rokne ke liye use hote hain.
+
+### 5. Post approve aur publish karo
+
+1. Post draft save karo aur **Approvals** mein exact text review karo.
+2. LinkedIn section mein correct account, permission aur token expiry verify karo.
+3. Exact post approve karo, phir available publishing/scheduling control use karo.
+4. Publishing history mein confirmed state aur remote post ID/receipt dekho.
+
+**Draft → approval → queue → confirmed provider receipt.** Timeout ya uncertain outcome par provider result check kiye baghair retry mat karo.
+
+### 6. Client brief aur proposal banao
+
+1. Prospect ke **Requirements** mein campaign details save karo ya private brief link create karo.
+2. Link copy karna client ko message nahi bhejta. Intended client ko authorized channel se share karo.
+3. Submitted brief review karo, missing details confirm karo aur relevant publisher inventory save karo.
+4. Availability, audience, budget, currency, deadline aur margin check karke proposal prepare karo.
+5. Brief submission order acceptance ya payment confirmation nahi. Sirf actual evidence par status update karo.
+
+Public inquiry form ko receiving owner workspace ki server configuration chahiye; naya deployment purane owner records automatically import nahi karta.
+
+## Laptop band ho to background kaam kaise chalega?
+
+1. **Agent control → n8n** se apne workspace ka runner credential create karo.
+2. Internal/account workflow export n8n Cloud mein import karo. Exports inactive start hote hain.
+3. Workflow origin is app ke current URL par set karo; old Sites URLs automatically update nahi hote.
+4. n8n Header Auth mein securely set karo: `Authorization: Bearer <runner credential>`.
+5. Internal workflow ke AI nodes ki provider credential assign karo.
+6. Sirf required scopes enable karo: model processing, approved posting aur network execution separate permissions hain.
+7. Pehle manual internal test chalao aur saved result ya legitimate empty-queue outcome check karo.
+8. Test ke baad workflow publish karo. Exported schedule har 30 minute, `Asia/Karachi`, hai.
+9. Manual click ke baghair actual scheduled run aur matching saved result verify karo. External action test ke liye exact approval aur working integration chahiye.
+
+n8n Cloud laptop ke baghair chal sakta hai, magar subscription/trial, credentials, quotas aur published schedule active hone chahiye. ChatGPT subscription API key ya n8n subscription nahi hai.
+
+## Background architecture
+
+| Component | Role |
+| --- | --- |
+| Next.js / Vercel | Pages, API routes and execution handlers |
+| Clerk | Verified sessions and enabled login methods |
+| Turso / libSQL | Persistent SQLite records and atomic batches |
+| n8n Cloud — optional | Scheduled authenticated runner calls |
+| AI provider — optional | Research/drafts; n8n export uses Gemini, optional server path uses OpenAI |
+| Official LinkedIn API — optional | OAuth and exact approved text-post publication |
+| Unipile — optional | Provider-supported messages, connections and limited profile edits |
+
+Server identity, owner scope, validation, saved permissions and relevant approvals are checked before execution. No automatic payment verification is implemented.
+
+## Errors aur fixes
+
+| Problem | Check / next step |
+| --- | --- |
+| Login fail | Correct identity, Clerk configuration, enabled provider aur domain check karo |
+| Account khaali | Data separate hai; historical workspace migration pending ho sakti hai |
+| Database unavailable | `/api/health`, Vercel function logs aur Turso configuration dekho; data reset mat karo |
+| Task queued/blocked | Agent control reason, AI credential, quota, limit aur runner execution dekho |
+| n8n nahi chal raha | Published state, current URL, Header Auth, expiry aur node credentials verify karo |
+| LinkedIn action nahi hua | Correct account, actual permission, exact approval, due time aur provider connection check karo |
+| Timeout/uncertain | Provider result aur saved receipt pehle inspect karo; immediate resend nahi |
+| Public inquiry unavailable | Receiving owner workspace configure karo; page ka email alternative use karo |
+
+Keys, tokens, client briefs aur private logs public issues mein post mat karo.
+
+## Developer quick start
+
+Use the Node version compatible with `package.json` and its declared package manager. Vercel currently uses Node 24.
+
+```bash
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm test:unit
+pnpm build
+```
+
+Before `pnpm dev`, configure real development resources and an untracked environment file. Required auth/storage variable names:
+
+```dotenv
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+```
+
+Do not use placeholder keys or commit values. LinkedIn, AI, owner routing and optional network execution need separate configuration. Existing `.env.example` includes optional/legacy settings; a listed name is not proof that a credential is provisioned.
+
+`lib/runtime.ts` adapts parameterized SQLite queries to libSQL. It initializes bundled migrations on first database use, with a migration ledger inside a write transaction. This does not copy the previous D1 database.
+
+### Verification limits
+
+Migration checkpoint checks: production build, TypeScript, 26 unit tests, local libSQL migration/tenant-filter/atomic-rollback test, live database health, auth-screen rendering and signed-out API rejection passed.
+
+These checks do not prove a completed real-user login, two-user live isolation, scheduled n8n execution or external LinkedIn action. Worker/D1 integration scripts are legacy coverage, not Vercel end-to-end tests.
+
+## More guides
+
+- [Roman Urdu starting guide](START_HERE_ROMAN_URDU.md)
+- [LinkedIn setup](LINKEDIN_SETUP.md)
+- [Background execution runbook](AUTONOMY_RUNBOOK.md)
+- [Audit checkpoint](PROJECT_AUDIT.md)
+- [Original repository setup](GITHUB_SETUP.md)
+- [Archived Sites/Cloudflare README](docs/LEGACY_SITES_README.md)
+
+Some older guides describe the Sites/Cloudflare deployment. Current README, source and live diagnostics describe the Vercel/Clerk/Turso path; legacy instructions do not establish current activation.
